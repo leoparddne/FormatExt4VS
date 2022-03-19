@@ -1,10 +1,10 @@
 ﻿using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Text.Operations;
 using System;
 using System.ComponentModel.Design;
 using System.Globalization;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Task = System.Threading.Tasks.Task;
@@ -12,14 +12,14 @@ using Task = System.Threading.Tasks.Task;
 namespace FormatExt
 {
     /// <summary>
-    /// Command handler
+    /// 移除空白字符
     /// </summary>
-    internal sealed class Format2SQLCommand
+    internal sealed class EraseWhiteSpaceCommand
     {
         /// <summary>
         /// Command ID.
         /// </summary>
-        public const int CommandId = 4130;
+        public const int CommandId = 4131;
 
         /// <summary>
         /// Command menu group (command set GUID).
@@ -32,12 +32,12 @@ namespace FormatExt
         private readonly AsyncPackage package;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Format2SQLCommand"/> class.
+        /// Initializes a new instance of the <see cref="EraseWhiteSpaceCommand"/> class.
         /// Adds our command handlers for menu (commands must exist in the command table file)
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
         /// <param name="commandService">Command service to add command to, not null.</param>
-        private Format2SQLCommand(AsyncPackage package, OleMenuCommandService commandService)
+        private EraseWhiteSpaceCommand(AsyncPackage package, OleMenuCommandService commandService)
         {
             this.package = package ?? throw new ArgumentNullException(nameof(package));
             commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
@@ -50,7 +50,7 @@ namespace FormatExt
         /// <summary>
         /// Gets the instance of the command.
         /// </summary>
-        public static Format2SQLCommand Instance
+        public static EraseWhiteSpaceCommand Instance
         {
             get;
             private set;
@@ -73,12 +73,12 @@ namespace FormatExt
         /// <param name="package">Owner package, not null.</param>
         public static async Task InitializeAsync(AsyncPackage package)
         {
-            // Switch to the main thread - the call to AddCommand in Format2SQL's constructor requires
+            // Switch to the main thread - the call to AddCommand in Command1's constructor requires
             // the UI thread.
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(package.DisposalToken);
 
             OleMenuCommandService commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
-            Instance = new Format2SQLCommand(package, commandService);
+            Instance = new EraseWhiteSpaceCommand(package, commandService);
         }
 
         /// <summary>
@@ -90,19 +90,7 @@ namespace FormatExt
         /// <param name="e">Event args.</param>
         private async void Execute(object sender, EventArgs e)
         {
-            //await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            //ThreadHelper.ThrowIfNotOnUIThread();
-            //string message = string.Format(CultureInfo.CurrentCulture, "Inside {0}.MenuItemCallback()", this.GetType().FullName);
-            //string title = "Format2SQL";
-
-            //// Show a message box to prove we were here
-            //VsShellUtilities.ShowMessageBox(
-            //    this.package,
-            //    message,
-            //    title,
-            //    OLEMSGICON.OLEMSGICON_INFO,
-            //    OLEMSGBUTTON.OLEMSGBUTTON_OK,
-            //    OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             try
             {
                 string selectedText = string.Empty;
@@ -110,60 +98,15 @@ namespace FormatExt
 
                 var dte = await this.ServiceProvider.GetServiceAsync(typeof(DTE)) as DTE;
 
-                Document doc = dte.ActiveDocument;
+                TextSelection textSelection = dte.ActiveDocument.Selection as TextSelection;
 
-                var x = doc.Selection.ToString();
-
-                TextSelection textSelection = doc.Selection as TextSelection;
-
-                //VsShellUtilities.ShowMessageBox(
-                //    this.package,
-                //    textSelection.Text,
-                //    x,
-                //    OLEMSGICON.OLEMSGICON_INFO,
-                //    OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                //    OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
-                if (string.IsNullOrEmpty(textSelection.Text))
-                {
-                    return;
-                }
-                textSelection.Text = GenName(textSelection.Text);
+                textSelection.ReplaceText("\t", " ");
+                textSelection.ReplaceText("\r\n", "");
             }
             catch (Exception)
             {
 
             }
-        }
-
-        private string GenName(string text)
-        {
-            StringBuilder result = new StringBuilder();
-            if (!string.IsNullOrWhiteSpace(text))
-            {
-                result.Append(text[0]);
-            }
-            for (int i = 1; i < text.Length; i++)
-            {
-                if (text[i] >= 65 && text[i] <= (65 + 25))
-                {
-                    //大写之前加上_
-                    result.Append("_");
-                }
-
-                //小写转大写
-                if (text[i] >= 65 + 32 && text[i] <= (65 + 25 + 32))
-                {
-                    result.Append((char)(text[i] - 32));
-                }
-                else
-                {
-                    result.Append(text[i]);
-                }
-
-
-            }
-
-            return result.ToString();
         }
     }
 }

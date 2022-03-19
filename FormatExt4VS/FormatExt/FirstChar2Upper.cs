@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.Shell;
+﻿using EnvDTE;
+using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.ComponentModel.Design;
@@ -10,14 +11,14 @@ using Task = System.Threading.Tasks.Task;
 namespace FormatExt
 {
     /// <summary>
-    /// Command handler
+    /// 首字母大写
     /// </summary>
-    internal sealed class TestCommand
+    internal sealed class FirstChar2Upper
     {
         /// <summary>
         /// Command ID.
         /// </summary>
-        public const int CommandId = 0x0100;
+        public const int CommandId = 256;
 
         /// <summary>
         /// Command menu group (command set GUID).
@@ -30,12 +31,12 @@ namespace FormatExt
         private readonly AsyncPackage package;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TestCommand"/> class.
+        /// Initializes a new instance of the <see cref="FirstChar2Upper"/> class.
         /// Adds our command handlers for menu (commands must exist in the command table file)
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
         /// <param name="commandService">Command service to add command to, not null.</param>
-        private TestCommand(AsyncPackage package, OleMenuCommandService commandService)
+        private FirstChar2Upper(AsyncPackage package, OleMenuCommandService commandService)
         {
             this.package = package ?? throw new ArgumentNullException(nameof(package));
             commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
@@ -48,7 +49,7 @@ namespace FormatExt
         /// <summary>
         /// Gets the instance of the command.
         /// </summary>
-        public static TestCommand Instance
+        public static FirstChar2Upper Instance
         {
             get;
             private set;
@@ -71,12 +72,12 @@ namespace FormatExt
         /// <param name="package">Owner package, not null.</param>
         public static async Task InitializeAsync(AsyncPackage package)
         {
-            // Switch to the main thread - the call to AddCommand in TestCommand's constructor requires
+            // Switch to the main thread - the call to AddCommand in FirstChar2Upper's constructor requires
             // the UI thread.
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(package.DisposalToken);
 
             OleMenuCommandService commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
-            Instance = new TestCommand(package, commandService);
+            Instance = new FirstChar2Upper(package, commandService);
         }
 
         /// <summary>
@@ -86,20 +87,51 @@ namespace FormatExt
         /// </summary>
         /// <param name="sender">Event sender.</param>
         /// <param name="e">Event args.</param>
-        private void Execute(object sender, EventArgs e)
+        private async void Execute(object sender, EventArgs e)
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
-            string message = string.Format(CultureInfo.CurrentCulture, "Inside {0}.MenuItemCallback()", this.GetType().FullName);
-            string title = "TestCommand";
+            //await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            try
+            {
+                string selectedText = string.Empty;
+                //DTE dte = this.GetService(typeof(DTE) as DTE;
 
-            // Show a message box to prove we were here
-            VsShellUtilities.ShowMessageBox(
-                this.package,
-                message,
-                title,
-                OLEMSGICON.OLEMSGICON_INFO,
-                OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+                var dte = await this.ServiceProvider.GetServiceAsync(typeof(DTE)) as DTE;
+
+                Document doc = dte.ActiveDocument;
+
+                var x = doc.Selection.ToString();
+
+                TextSelection textSelection = doc.Selection as TextSelection;
+
+                //VsShellUtilities.ShowMessageBox(
+                //    this.package,
+                //    textSelection.Text,
+                //    x,
+                //    OLEMSGICON.OLEMSGICON_INFO,
+                //    OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                //    OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+                if (string.IsNullOrEmpty(textSelection.Text))
+                {
+                    return;
+                }
+                textSelection.Text = Calc(textSelection.Text);
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+
+        private string Calc(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return string.Empty;
+            }
+
+            var subStr=text.Substring(1);
+
+            return $"{char.ToUpper(text[0])}{subStr}";
         }
     }
 }

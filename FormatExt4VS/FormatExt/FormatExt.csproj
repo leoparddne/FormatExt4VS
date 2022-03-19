@@ -45,11 +45,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="EraseWhiteSpaceCommand.cs" />
+    <Compile Include="FirstChar2Upper.cs" />
     <Compile Include="Format2SQLCommand.cs" />
     <Compile Include="FromatSelectionCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="FormatExtPackage.cs" />
-    <Compile Include="TestCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="source.extension.vsixmanifest">
@@ -75,6 +76,8 @@
     </VSCTCompile>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Resources\Command1.png" />
+    <Content Include="Resources\FirstChar2Upper.png" />
     <Content Include="Resources\Format2SQL.png" />
     <Content Include="Resources\FromatSelectionCommand.png" />
     <Content Include="Resources\TestCommand.png" />
